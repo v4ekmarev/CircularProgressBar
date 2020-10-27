@@ -6,58 +6,38 @@ import android.util.AttributeSet
 import android.util.DisplayMetrics
 import android.view.View
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 
-class CircularProgress : View {
+class CircularProgress @JvmOverloads constructor(
+    context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
+) : View(context, attrs, defStyleAttr) {
 
-    private var mViewWidth: Int = 0
-    private var mViewHeight: Int = 0
+    private var viewWidth: Int = 0
+    private var viewHeight: Int = 0
 
-    private val mStartAngle = 180f      // Always start from top (default is: "3 o'clock on a watch.")
-    private var mSweepAngle = 0f              // How long to sweep from mStartAngle
-    private val mMaxSweepAngle = 360f         // Max degrees to sweep = full circle
-    private var mStrokeWidth = dpToPx(20)             // Width of outline
-    private var mMarginAngle = 25
-    private val mAnimationDuration = 400       // Animation duration for progress change
-    private val mMaxProgress = 100             // Max progress to use
-    private var mDrawText = true           // Set to true if progress text should be drawn
-    private var mRoundedCorners = true     // Set to true if rounded corners should be applied to outline ends
-    private var mProgressColorFirst = Color.GREEN   // Outline color
-    private var mProgressColorSecond = Color.BLACK   // Outline color
-    private var mTextColor = Color.RED       // Progress text color
+    private val startAngle = 180f      // Always start from top (default is: "3 o'clock on a watch.")
+    private var sweepAngle = 0f              // How long to sweep from startAngle
+    private val maxSweepAngle = 360f         // Max degrees to sweep = full circle
+    private var strokeWidth = dpToPx(20)             // Width of outline
+    private var marginAngle = 25
+    private val maxProgress = 100             // Max progress to use
+    private var isDrawText = true           // Set to true if progress text should be drawn
+    private var isRoundedCorners = true     // Set to true if rounded corners should be applied to outline ends
+    private var progressColorFirst = Color.GREEN   // Outline color
+    private var progressColorSecond = Color.BLACK   // Outline color
+    private var textColor = Color.RED       // Progress text color
 
-    private var mPaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private var paint: Paint = Paint(Paint.ANTI_ALIAS_FLAG)
     // Allocate paint outside onDraw to avoid unnecessary object creation
 
-    constructor(context: Context) : super(context)
-
-    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-        val attrCircle = context.obtainStyledAttributes(attrs, R.styleable.CircularProgress)
-        val N = attrCircle.indexCount
-        for (i in 0 until N) {
-            val attr = attrCircle.getIndex(i)
-            when (attr) {
-                R.styleable.CircularProgress_colorFirst -> {
-                    mProgressColorFirst = attrCircle.getColor(attr, Color.GREEN)
-                }
-
-                R.styleable.CircularProgress_colorSecond -> {
-                    mProgressColorSecond = attrCircle.getColor(attr, Color.BLACK)
-                }
-
-                R.styleable.CircularProgress_showProgressText -> {
-                    mDrawText = attrCircle.getBoolean(attr, false)
-                }
-
-                R.styleable.CircularProgress_progressWidth -> {
-                    mStrokeWidth = dpToPx(attrCircle.getDimensionPixelSize(attr, 20))
-                }
-            }
-        }
-        attrCircle.recycle()
+    init {
+        val ta = context.theme.obtainStyledAttributes(attrs, R.styleable.CircularProgress, 0, 0)
+        progressColorFirst = ta.getColor(R.styleable.CircularProgress_colorFirst, 0)
+        progressColorSecond = ta.getColor(R.styleable.CircularProgress_colorSecond, 0)
+        isDrawText = ta.getBoolean(R.styleable.CircularProgress_colorSecond, false)
+        strokeWidth = dpToPx(ta.getDimensionPixelSize(R.styleable.CircularProgress_progressWidth, 20))
     }
-
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs)
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
@@ -68,66 +48,87 @@ class CircularProgress : View {
     }
 
     private fun initMeasurments() {
-        mViewWidth = width
-        mViewHeight = height
+        viewWidth = width
+        viewHeight = height
     }
 
     private fun drawOutlineArcFirst(canvas: Canvas) {
 
-        val diameter = min(mViewWidth, mViewHeight) - mStrokeWidth
+        val diameter = min(viewWidth, viewHeight) - strokeWidth
 
-        val outerOval = RectF(mStrokeWidth.toFloat(), mStrokeWidth.toFloat(), diameter.toFloat(), diameter.toFloat())
+        val outerOval = RectF(
+            strokeWidth.toFloat(),
+            strokeWidth.toFloat(),
+            diameter.toFloat(),
+            diameter.toFloat()
+        )
 
-        mPaint.color = mProgressColorFirst
-        mPaint.strokeWidth = mStrokeWidth.toFloat()
-        mPaint.isAntiAlias = true
-        mPaint.strokeCap = if (mRoundedCorners) Paint.Cap.ROUND else Paint.Cap.BUTT
-        mPaint.style = Paint.Style.STROKE
-        canvas.drawArc(outerOval, mStartAngle, mSweepAngle - mMarginAngle, false, mPaint)
+        paint.color = progressColorFirst
+        paint.strokeWidth = strokeWidth.toFloat()
+        paint.isAntiAlias = true
+        paint.strokeCap = if (isRoundedCorners) Paint.Cap.ROUND else Paint.Cap.BUTT
+        paint.style = Paint.Style.STROKE
+        canvas.drawArc(outerOval, startAngle, sweepAngle - marginAngle, false, paint)
     }
 
     private fun drawOutlineArcSecond(canvas: Canvas) {
 
-        val diameter = min(mViewWidth, mViewHeight) - mStrokeWidth
+        val diameter = min(viewWidth, viewHeight) - strokeWidth
 
-        val outerOval = RectF(mStrokeWidth.toFloat(), mStrokeWidth.toFloat(), diameter.toFloat(), diameter.toFloat())
+        val outerOval = RectF(
+            strokeWidth.toFloat(),
+            strokeWidth.toFloat(),
+            diameter.toFloat(),
+            diameter.toFloat()
+        )
 
-        mPaint.color = mProgressColorSecond
-        mPaint.strokeWidth = mStrokeWidth.toFloat()
-        mPaint.isAntiAlias = true
-        mPaint.strokeCap = if (mRoundedCorners) Paint.Cap.ROUND else Paint.Cap.BUTT
-        mPaint.style = Paint.Style.STROKE
-        canvas.drawArc(outerOval, mStartAngle + mSweepAngle, 360f - mSweepAngle - mMarginAngle.toFloat(), false, mPaint)
+        paint.color = progressColorSecond
+        paint.strokeWidth = strokeWidth.toFloat()
+        paint.isAntiAlias = true
+        paint.strokeCap = if (isRoundedCorners) Paint.Cap.ROUND else Paint.Cap.BUTT
+        paint.style = Paint.Style.STROKE
+        canvas.drawArc(
+            outerOval,
+            startAngle + sweepAngle,
+            360f - sweepAngle - marginAngle.toFloat(),
+            false,
+            paint
+        )
     }
 
-    fun dpToPx(dp: Int): Int {
+    private fun dpToPx(dp: Int): Int {
         val displayMetrics = context.resources.displayMetrics
-        return Math.round(dp * (displayMetrics.xdpi / DisplayMetrics.DENSITY_DEFAULT))
+        return (dp * (displayMetrics.xdpi / DisplayMetrics.DENSITY_DEFAULT)).roundToInt()
     }
 
     private fun drawText(canvas: Canvas) {
-        mPaint.textSize = Math.min(mViewWidth, mViewHeight) / 3.5f
-        mPaint.textAlign = Paint.Align.CENTER
-        mPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        mPaint.strokeWidth = 0f
-        mPaint.color = mTextColor
+        paint.textSize = Math.min(viewWidth, viewHeight) / 3.5f
+        paint.textAlign = Paint.Align.CENTER
+        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        paint.strokeWidth = 0f
+        paint.color = textColor
 
         // Center text
         val xPos = canvas.width / 2
-        val yPos = (canvas.height / 2 - (mPaint.descent() + mPaint.ascent()) / 2).toInt()
-        canvas.drawText(calcProgressFromSweepAngle(mSweepAngle).toString(), xPos.toFloat(), yPos.toFloat(), mPaint)
+        val yPos = (canvas.height / 2 - (paint.descent() + paint.ascent()) / 2).toInt()
+        canvas.drawText(
+            calcProgressFromSweepAngle(sweepAngle).toString(),
+            xPos.toFloat(),
+            yPos.toFloat(),
+            paint
+        )
     }
 
     private fun calcSweepAngleFromProgress(progress: Float): Float {
-        return mMaxSweepAngle / mMaxProgress * progress
+        return maxSweepAngle / maxProgress * progress
     }
 
     private fun calcProgressFromSweepAngle(sweepAngle: Float): Int {
-        return (sweepAngle * mMaxProgress / mMaxSweepAngle).toInt()
+        return (sweepAngle * maxProgress / maxSweepAngle).toInt()
     }
 
     fun setMarginAngle(marginAngle: Int) {
-        this.mMarginAngle = marginAngle
+        this.marginAngle = marginAngle
     }
 
     /**
@@ -136,37 +137,37 @@ class CircularProgress : View {
      * @param progress progress between 0 and 100.
      */
     fun setProgress(progress: Float) {
-        var progress = progress
+        var progressLocal = progress
         if (progress >= 95) {
-            progress = 95f
+            progressLocal = 95f
         }
         if (progress <= 5) {
-            progress = 5f
+            progressLocal = 5f
         }
-        mSweepAngle = calcSweepAngleFromProgress(progress)
+        sweepAngle = calcSweepAngleFromProgress(progressLocal)
         invalidate()
     }
 
     fun setProgressColor(colorFirst: Int, colorSecond: Int) {
-        mProgressColorFirst = colorFirst
-        mProgressColorSecond = colorSecond
+        progressColorFirst = colorFirst
+        progressColorSecond = colorSecond
         invalidate()
     }
 
 
     fun setProgressWidth(width: Int) {
-        mStrokeWidth = dpToPx(width)
+        strokeWidth = dpToPx(width)
 
         invalidate()
     }
 
     fun setTextColor(color: Int) {
-        mTextColor = color
+        textColor = color
         invalidate()
     }
 
     fun showProgressText(show: Boolean) {
-        mDrawText = show
+        isDrawText = show
         invalidate()
     }
 
@@ -177,7 +178,7 @@ class CircularProgress : View {
      * @param roundedCorners true if you want rounded corners of false otherwise.
      */
     fun useRoundedCorners(roundedCorners: Boolean) {
-        mRoundedCorners = roundedCorners
+        isRoundedCorners = roundedCorners
         invalidate()
     }
 }
