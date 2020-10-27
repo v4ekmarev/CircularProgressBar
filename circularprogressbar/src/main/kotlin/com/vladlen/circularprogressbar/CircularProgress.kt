@@ -1,10 +1,11 @@
-package widjet.circularprogressbar
+package com.vladlen.circularprogressbar
 
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
 import android.util.DisplayMetrics
 import android.view.View
+import kotlin.math.min
 
 
 class CircularProgress : View {
@@ -73,7 +74,7 @@ class CircularProgress : View {
 
     private fun drawOutlineArcFirst(canvas: Canvas) {
 
-        val diameter = Math.min(mViewWidth, mViewHeight) - mStrokeWidth
+        val diameter = min(mViewWidth, mViewHeight) - mStrokeWidth
 
         val outerOval = RectF(mStrokeWidth.toFloat(), mStrokeWidth.toFloat(), diameter.toFloat(), diameter.toFloat())
 
@@ -87,7 +88,7 @@ class CircularProgress : View {
 
     private fun drawOutlineArcSecond(canvas: Canvas) {
 
-        val diameter = Math.min(mViewWidth, mViewHeight) - mStrokeWidth
+        val diameter = min(mViewWidth, mViewHeight) - mStrokeWidth
 
         val outerOval = RectF(mStrokeWidth.toFloat(), mStrokeWidth.toFloat(), diameter.toFloat(), diameter.toFloat())
 
